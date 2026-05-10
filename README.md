@@ -12,6 +12,26 @@
 - Send reminder emails with a scheduled task
 - View appointments in list and calendar layouts
 
+## Screenshots
+
+### Manage appointments
+
+The scheduler management page for creating, updating, and administering appointments.
+
+![Manage appointments](docs/images/manage-page.jpeg)
+
+### Upcoming appointments
+
+The public upcoming appointments list with join and leave actions for logged-in users.
+
+![Upcoming appointments list](docs/images/upcoming-list-page.jpeg)
+
+### Upcoming calendar
+
+The public calendar view for browsing available upcoming appointments.
+
+![Upcoming appointments calendar](docs/images/upcoming-calendar-page.jpeg)
+
 ## Requirements
 
 - Moodle 4.1 or later
@@ -59,4 +79,4 @@ Current plugin metadata:
 
 ## Review Notes
 
-- Reminder emails currently go to hosts only.
+- Reminder emails go to hosts and saved attendees.
