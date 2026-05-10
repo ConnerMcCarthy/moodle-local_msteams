@@ -294,7 +294,7 @@ final class view {
         if ($slot->status !== 'cancelled' && has_capability('local/msteams:claimslot', \context_system::instance())) {
             if (empty($slot->hostid)) {
                 $links[] = \html_writer::link(
-                    new \moodle_url('/local/msteams/claim.php', ['id' => $slot->id, 'sesskey' => sesskey(), 'returnurl' => $returnurl]),
+                    new \moodle_url('/local/msteams/claim.php', ['id' => $slot->id, 'returnurl' => $returnurl]),
                     get_string('claimslot', 'local_msteams')
                 );
             } else if ((int)$slot->hostid === (int)$USER->id || has_capability('local/msteams:manageslots', \context_system::instance())) {
@@ -306,14 +306,24 @@ final class view {
         }
 
         if (has_capability('local/msteams:manageslots', \context_system::instance())) {
-            $links[] = \html_writer::link(
-                new \moodle_url('/local/msteams/toggle.php', ['id' => $slot->id, 'sesskey' => sesskey(), 'returnurl' => $returnurl]),
+            $links[] = self::render_post_action(
+                new \moodle_url('/local/msteams/toggle.php'),
+                [
+                    'id' => $slot->id,
+                    'sesskey' => sesskey(),
+                    'returnurl' => $returnurl,
+                ],
                 $slot->status === 'cancelled' ? get_string('reopenslot', 'local_msteams') : get_string('cancelslot', 'local_msteams')
             );
-            $links[] = \html_writer::link(
-                new \moodle_url('/local/msteams/delete.php', ['id' => $slot->id, 'sesskey' => sesskey(), 'returnurl' => $returnurl]),
+            $links[] = self::render_post_action(
+                new \moodle_url('/local/msteams/delete.php'),
+                [
+                    'id' => $slot->id,
+                    'sesskey' => sesskey(),
+                    'returnurl' => $returnurl,
+                ],
                 get_string('deleteslot', 'local_msteams'),
-                ['style' => 'color:#b42318;font-weight:600;']
+                'color:#b42318;font-weight:600;'
             );
         }
 
@@ -326,5 +336,34 @@ final class view {
      */
     private static function popup_onclick_js(string $windowname): string {
         return "var w=window.open(this.href,'{$windowname}','width=560,height=420,resizable=yes,scrollbars=yes'); if(!w){ window.location=this.href; } return false;";
+    }
+
+    /**
+     * @param \moodle_url $action
+     * @param array $params
+     * @param string $label
+     * @param string $style
+     * @return string
+     */
+    private static function render_post_action(\moodle_url $action, array $params, string $label, string $style = ''): string {
+        $hidden = '';
+        foreach ($params as $name => $value) {
+            $hidden .= \html_writer::empty_tag('input', [
+                'type' => 'hidden',
+                'name' => $name,
+                'value' => (string)$value,
+            ]);
+        }
+
+        $button = \html_writer::tag('button', s($label), [
+            'type' => 'submit',
+            'style' => 'background:none;border:none;padding:0;margin:0;color:#0f6cbf;text-decoration:underline;cursor:pointer;' . $style,
+        ]);
+
+        return \html_writer::tag('form', $hidden . $button, [
+            'method' => 'post',
+            'action' => $action->out(false),
+            'style' => 'display:inline;margin:0;',
+        ]);
     }
 }

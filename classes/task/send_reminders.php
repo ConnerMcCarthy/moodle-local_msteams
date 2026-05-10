@@ -14,7 +14,7 @@ final class send_reminders extends \core\task\scheduled_task {
     }
 
     /**
-     * Send host reminder emails for claimed webinar slots.
+     * Send host reminder emails for claimed appointment slots.
      *
      * @return void
      */
@@ -84,7 +84,7 @@ final class send_reminders extends \core\task\scheduled_task {
         $subject = get_string('reminder_subject_' . $key, 'local_msteams');
         $joinurl = empty($slot->msteams_join_url) ? 'TBD' : $slot->msteams_join_url;
         $message = implode("\n\n", [
-            'This is an automated webinar reminder.',
+            'This is an automated appointment reminder.',
             'Event: ' . $slot->name,
             'Start: ' . userdate((int)$slot->timestart),
             'Join URL: ' . $joinurl,

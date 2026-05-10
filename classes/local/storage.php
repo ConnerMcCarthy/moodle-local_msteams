@@ -15,7 +15,7 @@ final class storage {
     private const CONTACT_MARKER = 'local_msteams_contact';
 
     /**
-     * Fetch all webinar slots, optionally filtered by host.
+     * Fetch all appointment slots, optionally filtered by host.
      *
      * @param int|null $hostid
      * @return array
@@ -209,7 +209,7 @@ final class storage {
                 'timeduration' => $payload->timeduration,
                 'timesort' => $payload->timestart,
                 'component' => 'local_msteams',
-                'eventtype' => 'webinar_slot',
+                'eventtype' => 'appointment_slot',
                 'type' => CALENDAR_EVENT_TYPE_STANDARD,
             ], false);
 
@@ -239,7 +239,7 @@ final class storage {
             'userid' => $USER->id,
             'modulename' => '',
             'instance' => 0,
-            'eventtype' => 'webinar_slot',
+            'eventtype' => 'appointment_slot',
             'timestart' => $payload->timestart,
             'timeduration' => $payload->timeduration,
             'timesort' => $payload->timestart,
@@ -481,7 +481,7 @@ final class storage {
      */
     public static function default_metadata(): array {
         return [
-            'kind' => 'webinar_slot',
+            'kind' => 'appointment_slot',
             'status' => 'open',
             'hostid' => 0,
             'attendeeuserids' => [],

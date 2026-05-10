@@ -100,6 +100,7 @@ final class slot_form extends \moodleform {
             $buttons[] = $mform->createElement('submit', 'submitbutton', get_string('saveslot', 'local_msteams'));
             $buttons[] = $mform->createElement('submit', 'setuprecurrence', get_string('setupweeklyrecurrence', 'local_msteams'));
             $buttons[] = $mform->createElement('cancel');
+            $mform->addElement('html', '<div style="margin-top:1rem"></div>');
             $mform->addGroup($buttons, 'buttonar', '', [' '], false);
             $mform->closeHeaderBefore('buttonar');
         }

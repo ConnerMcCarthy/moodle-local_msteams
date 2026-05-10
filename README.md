@@ -59,5 +59,4 @@ Current plugin metadata:
 
 ## Review Notes
 
-- This plugin defines custom tables in `db/install.xml`; it does not store appointment state in hidden calendar description metadata.
 - Reminder emails currently go to hosts only.

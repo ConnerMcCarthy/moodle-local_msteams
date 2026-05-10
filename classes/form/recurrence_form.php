@@ -32,6 +32,7 @@ final class recurrence_form extends \moodleform {
         $buttons[] = $mform->createElement('submit', 'createrecurrence', get_string('createrecurrence', 'local_msteams'));
         $buttons[] = $mform->createElement('cancel');
         $mform->addGroup($buttons, 'buttonar', '', [' '], false);
+        $mform->addElement('html', '<div style="margin-top:1rem"></div>');
         $mform->closeHeaderBefore('buttonar');
     }
 
