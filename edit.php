@@ -89,7 +89,7 @@ if ($data = $mform->get_data()) {
 
     if (!$slot && optional_param('setuprecurrence', '', PARAM_RAW_TRIMMED) !== '') {
         $SESSION->local_msteams_recurrence_draft = [
-            'payload' => serialize($payload),
+            'payload' => (array)$payload,
             'attendeeids' => $attendeeids,
         ];
         redirect(new moodle_url('/local/msteams/recurrence.php'));

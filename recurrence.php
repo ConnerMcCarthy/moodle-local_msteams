@@ -7,12 +7,12 @@ require_login();
 $context = context_system::instance();
 require_capability('local/msteams:manageslots', $context);
 
-if (empty($SESSION->local_msteams_recurrence_draft['payload'])) {
+if (empty($SESSION->local_msteams_recurrence_draft['payload']) || !is_array($SESSION->local_msteams_recurrence_draft['payload'])) {
     redirect(new moodle_url('/local/msteams/edit.php'));
 }
 
-$previewpayload = @unserialize($SESSION->local_msteams_recurrence_draft['payload']);
-if (!$previewpayload instanceof stdClass) {
+$previewpayload = (object)$SESSION->local_msteams_recurrence_draft['payload'];
+if (empty($previewpayload->name) || empty($previewpayload->timestart)) {
     unset($SESSION->local_msteams_recurrence_draft);
     redirect(new moodle_url('/local/msteams/edit.php'));
 }
