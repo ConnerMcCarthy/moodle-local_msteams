@@ -27,5 +27,27 @@ function xmldb_local_msteams_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026051001, 'local', 'msteams');
     }
 
+    if ($oldversion < 2026051002) {
+        $dbman = $DB->get_manager();
+        $table = new xmldb_table('local_msteams_reminder');
+        $field = new xmldb_field('recipientuserid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'reminderkey');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        $oldindex = new xmldb_index('slotid_reminderkey_uix', XMLDB_INDEX_UNIQUE, ['slotid', 'reminderkey']);
+        if ($dbman->index_exists($table, $oldindex)) {
+            $dbman->drop_index($table, $oldindex);
+        }
+
+        $newindex = new xmldb_index('slotid_reminderkey_userid_uix', XMLDB_INDEX_UNIQUE, ['slotid', 'reminderkey', 'recipientuserid']);
+        if (!$dbman->index_exists($table, $newindex)) {
+            $dbman->add_index($table, $newindex);
+        }
+
+        $DB->execute("UPDATE {local_msteams_reminder} SET recipientuserid = 0 WHERE recipientuserid IS NULL");
+        upgrade_plugin_savepoint(true, 2026051002, 'local', 'msteams');
+    }
+
     return true;
 }

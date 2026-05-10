@@ -48,6 +48,7 @@ final class provider implements
         $collection->add_database_table('local_msteams_reminder', [
             'slotid' => 'privacy:metadata:reminder:slotid',
             'reminderkey' => 'privacy:metadata:reminder:reminderkey',
+            'recipientuserid' => 'privacy:metadata:reminder:recipientuserid',
             'timesent' => 'privacy:metadata:reminder:timesent',
         ], 'privacy:metadata:local_msteams_reminder');
 

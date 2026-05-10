@@ -456,11 +456,15 @@ final class storage {
      * @param string $key
      * @return void
      */
-    public static function mark_reminder_sent(int $eventid, string $key): void {
+    public static function mark_reminder_sent(int $eventid, string $key, int $recipientuserid): void {
         global $DB;
 
         $slot = self::get_slot($eventid);
-        $existing = $DB->get_record(self::REMINDER_TABLE, ['slotid' => $slot->slotid, 'reminderkey' => $key]);
+        $existing = $DB->get_record(self::REMINDER_TABLE, [
+            'slotid' => $slot->slotid,
+            'reminderkey' => $key,
+            'recipientuserid' => $recipientuserid,
+        ]);
         if ($existing) {
             $existing->timesent = time();
             $DB->update_record(self::REMINDER_TABLE, $existing);
@@ -470,6 +474,7 @@ final class storage {
         $DB->insert_record(self::REMINDER_TABLE, (object)[
             'slotid' => $slot->slotid,
             'reminderkey' => $key,
+            'recipientuserid' => $recipientuserid,
             'timesent' => time(),
         ]);
     }
@@ -557,7 +562,7 @@ final class storage {
         $records = $DB->get_records_select(self::REMINDER_TABLE, 'slotid ' . $insql, $params, '', 'id, slotid, reminderkey, timesent');
         $map = [];
         foreach ($records as $record) {
-            $map[(int)$record->slotid][(string)$record->reminderkey] = (int)$record->timesent;
+            $map[(int)$record->slotid][(string)$record->reminderkey][(int)$record->recipientuserid] = (int)$record->timesent;
         }
         return $map;
     }
@@ -613,11 +618,23 @@ final class storage {
 
         $DB->delete_records(self::REMINDER_TABLE, ['slotid' => $slotid]);
         foreach ($reminders as $key => $timesent) {
-            $DB->insert_record(self::REMINDER_TABLE, (object)[
-                'slotid' => $slotid,
-                'reminderkey' => (string)$key,
-                'timesent' => (int)$timesent,
-            ]);
+            if (is_array($timesent)) {
+                foreach ($timesent as $userid => $recipienttimesent) {
+                    $DB->insert_record(self::REMINDER_TABLE, (object)[
+                        'slotid' => $slotid,
+                        'reminderkey' => (string)$key,
+                        'recipientuserid' => (int)$userid,
+                        'timesent' => (int)$recipienttimesent,
+                    ]);
+                }
+            } else {
+                $DB->insert_record(self::REMINDER_TABLE, (object)[
+                    'slotid' => $slotid,
+                    'reminderkey' => (string)$key,
+                    'recipientuserid' => 0,
+                    'timesent' => (int)$timesent,
+                ]);
+            }
         }
     }
 

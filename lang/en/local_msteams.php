@@ -145,4 +145,5 @@ $string['privacy:metadata:attendee:timecreated'] = 'The timestamp when the atten
 $string['privacy:metadata:local_msteams_reminder'] = 'Stores reminder delivery history for scheduler slots.';
 $string['privacy:metadata:reminder:slotid'] = 'The scheduler slot record ID.';
 $string['privacy:metadata:reminder:reminderkey'] = 'The reminder window key.';
+$string['privacy:metadata:reminder:recipientuserid'] = 'The user ID who received the reminder.';
 $string['privacy:metadata:reminder:timesent'] = 'The timestamp when the reminder was recorded as sent.';

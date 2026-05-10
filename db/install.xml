@@ -47,13 +47,14 @@
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="slotid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="reminderkey" TYPE="char" LENGTH="20" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="recipientuserid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" DEFAULT="0"/>
         <FIELD NAME="timesent" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" DEFAULT="0"/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
       </KEYS>
       <INDEXES>
-        <INDEX NAME="slotid_reminderkey_uix" UNIQUE="true" FIELDS="slotid, reminderkey"/>
+        <INDEX NAME="slotid_reminderkey_userid_uix" UNIQUE="true" FIELDS="slotid, reminderkey, recipientuserid"/>
         <INDEX NAME="slotid_ix" UNIQUE="false" FIELDS="slotid"/>
       </INDEXES>
     </TABLE>

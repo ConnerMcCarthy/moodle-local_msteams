@@ -14,7 +14,7 @@ final class send_reminders extends \core\task\scheduled_task {
     }
 
     /**
-     * Send host reminder emails for claimed appointment slots.
+     * Send reminder emails for claimed appointment slots.
      *
      * @return void
      */
@@ -32,9 +32,13 @@ final class send_reminders extends \core\task\scheduled_task {
                 continue;
             }
 
-            $host = $DB->get_record('user', ['id' => $slot->hostid, 'deleted' => 0, 'suspended' => 0], '*');
-            if (!$host || empty($host->email)) {
-                continue;
+            $recipientids = [];
+            $recipientids[] = (int)$slot->hostid;
+            foreach ($slot->attendeeuserids ?? [] as $attendeeid) {
+                $attendeeid = (int)$attendeeid;
+                if ($attendeeid > 0 && !in_array($attendeeid, $recipientids, true)) {
+                    $recipientids[] = $attendeeid;
+                }
             }
 
             foreach ($windows as $key => $secondsbefore) {
@@ -42,8 +46,19 @@ final class send_reminders extends \core\task\scheduled_task {
                     continue;
                 }
 
-                if ($this->send_reminder($host, $slot, $key)) {
-                    storage::mark_reminder_sent((int)$slot->id, $key);
+                foreach ($recipientids as $recipientid) {
+                    $recipient = $DB->get_record('user', ['id' => $recipientid, 'deleted' => 0, 'suspended' => 0], '*');
+                    if (!$recipient || empty($recipient->email)) {
+                        continue;
+                    }
+
+                    if ($this->has_recipient_reminder($slot, $key, $recipientid)) {
+                        continue;
+                    }
+
+                    if ($this->send_reminder($recipient, $slot, $key)) {
+                        storage::mark_reminder_sent((int)$slot->id, $key, $recipientid);
+                    }
                 }
             }
         }
@@ -56,14 +71,20 @@ final class send_reminders extends \core\task\scheduled_task {
      * @return bool
      */
     private function should_send_reminder(\stdClass $slot, string $key, int $secondsbefore): bool {
-        $sent = $slot->metadata['reminders'][$key] ?? null;
-        if (!empty($sent)) {
-            return false;
-        }
-
         $target = (int)$slot->timestart - $secondsbefore;
         $now = time();
         return $target <= $now && $now < ((int)$slot->timestart);
+    }
+
+    /**
+     * @param \stdClass $slot
+     * @param string $key
+     * @param int $recipientid
+     * @return bool
+     */
+    private function has_recipient_reminder(\stdClass $slot, string $key, int $recipientid): bool {
+        $sent = $slot->metadata['reminders'][$key][$recipientid] ?? null;
+        return !empty($sent);
     }
 
     /**
