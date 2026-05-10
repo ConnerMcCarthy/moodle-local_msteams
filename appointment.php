@@ -80,15 +80,6 @@ if (optional_param('leaveattendee', 0, PARAM_BOOL) && confirm_sesskey()) {
     }
 }
 
-$attendeelabels = [];
-if (!empty($slot->attendeeuserids)) {
-    list($insql, $params) = $DB->get_in_or_equal(array_map('intval', $slot->attendeeuserids), SQL_PARAMS_NAMED);
-    $users = $DB->get_records_select('user', 'id ' . $insql . ' AND deleted = 0', $params, 'firstname ASC, lastname ASC', 'id, firstname, lastname');
-    foreach ($users as $user) {
-        $attendeelabels[] = fullname($user);
-    }
-}
-
 echo $OUTPUT->header();
 if (!$popup) {
     echo html_writer::div(

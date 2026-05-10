@@ -68,7 +68,8 @@ final class provider implements
         $hasdata =
             $DB->record_exists('local_msteams_slot', ['hostid' => $userid]) ||
             $DB->record_exists('local_msteams_slot', ['createdby' => $userid]) ||
-            $DB->record_exists('local_msteams_attendee', ['userid' => $userid]);
+            $DB->record_exists('local_msteams_attendee', ['userid' => $userid]) ||
+            $DB->record_exists('local_msteams_reminder', ['recipientuserid' => $userid]);
 
         if ($hasdata) {
             $contextlist->add_system_context();
@@ -94,7 +95,8 @@ final class provider implements
         $hostids = $DB->get_fieldset_select('local_msteams_slot', 'DISTINCT hostid', 'hostid > 0');
         $creatorids = $DB->get_fieldset_select('local_msteams_slot', 'DISTINCT createdby', 'createdby > 0');
         $attendeeids = $DB->get_fieldset_select('local_msteams_attendee', 'DISTINCT userid', 'userid > 0');
-        $userids = array_values(array_unique(array_map('intval', array_merge($hostids, $creatorids, $attendeeids))));
+        $reminderids = $DB->get_fieldset_select('local_msteams_reminder', 'DISTINCT recipientuserid', 'recipientuserid > 0');
+        $userids = array_values(array_unique(array_map('intval', array_merge($hostids, $creatorids, $attendeeids, $reminderids))));
 
         if ($userids) {
             $userlist->add_users($userids);
@@ -128,12 +130,12 @@ final class provider implements
 
             $hosted = $DB->get_records('local_msteams_slot', ['hostid' => (int)$user->id], 'id ASC');
             foreach ($hosted as $slot) {
-                $export->hostedappointments[] = self::export_slot_record($slot);
+                $export->hostedappointments[] = self::export_slot_record($slot, (int)$user->id);
             }
 
             $created = $DB->get_records('local_msteams_slot', ['createdby' => (int)$user->id], 'id ASC');
             foreach ($created as $slot) {
-                $export->createdappointments[] = self::export_slot_record($slot);
+                $export->createdappointments[] = self::export_slot_record($slot, (int)$user->id);
             }
 
             $attendeejoins = $DB->get_records('local_msteams_attendee', ['userid' => (int)$user->id], 'id ASC');
@@ -142,7 +144,7 @@ final class provider implements
                 if (!$slot) {
                     continue;
                 }
-                $item = self::export_slot_record($slot);
+                $item = self::export_slot_record($slot, (int)$user->id);
                 $item->attendeemappingcreated = userdate((int)$join->timecreated);
                 $export->attendingappointments[] = $item;
             }
@@ -165,6 +167,7 @@ final class provider implements
         }
 
         $DB->delete_records('local_msteams_attendee', []);
+        $DB->delete_records('local_msteams_reminder', []);
         $DB->execute("UPDATE {local_msteams_slot} SET createdby = 0 WHERE createdby <> 0");
         $DB->execute("UPDATE {local_msteams_slot} SET hostid = 0, status = CASE WHEN status = 'cancelled' THEN status ELSE 'open' END WHERE hostid <> 0");
     }
@@ -210,6 +213,7 @@ final class provider implements
         }
 
         $DB->delete_records('local_msteams_attendee', ['userid' => $userid]);
+        $DB->delete_records('local_msteams_reminder', ['recipientuserid' => $userid]);
         $DB->execute(
             "UPDATE {local_msteams_slot}
                 SET hostid = 0,
@@ -224,9 +228,10 @@ final class provider implements
      * Build a simple export object for a slot record.
      *
      * @param \stdClass $slot
+     * @param int $userid
      * @return \stdClass
      */
-    private static function export_slot_record(\stdClass $slot): \stdClass {
+    private static function export_slot_record(\stdClass $slot, int $userid): \stdClass {
         global $DB;
 
         $eventname = '';
@@ -235,11 +240,15 @@ final class provider implements
             $eventname = (string)$event->name;
         }
 
-        $reminders = $DB->get_records('local_msteams_reminder', ['slotid' => (int)$slot->id], 'id ASC');
+        $reminders = $DB->get_records('local_msteams_reminder', [
+            'slotid' => (int)$slot->id,
+            'recipientuserid' => $userid,
+        ], 'id ASC');
         $reminderdata = [];
         foreach ($reminders as $reminder) {
             $reminderdata[] = (object)[
                 'key' => (string)$reminder->reminderkey,
+                'recipientuserid' => (int)$reminder->recipientuserid,
                 'timesent' => userdate((int)$reminder->timesent),
             ];
         }
