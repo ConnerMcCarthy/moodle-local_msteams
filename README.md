@@ -35,6 +35,7 @@ The public calendar view for browsing available upcoming appointments.
 ## Requirements
 
 - Moodle 4.1 or later
+- Tested on Moodle 4.1.12
 - A Microsoft 365 tenant with:
   - Exchange Online mailbox for the organizer account
   - Teams-enabled organizer account
