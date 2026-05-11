@@ -5,6 +5,23 @@ defined('MOODLE_INTERNAL') || die();
 
 final class view {
     /**
+     * @param \moodle_url|null $baseurl
+     * @return array
+     */
+    private static function build_action_context(?\moodle_url $baseurl = null): array {
+        global $USER;
+
+        $context = \context_system::instance();
+
+        return [
+            'userid' => (int)$USER->id,
+            'canmanage' => has_capability('local/msteams:manageslots', $context),
+            'canclaim' => has_capability('local/msteams:claimslot', $context),
+            'returnurl' => $baseurl ? $baseurl->out(false) : (new \moodle_url('/local/msteams/index.php'))->out(false),
+        ];
+    }
+
+    /**
      * @param array $slots
      * @param moodle_url|null $baseurl
      * @param bool $showactions
@@ -23,6 +40,8 @@ final class view {
         if (!$slots) {
             return $OUTPUT->notification(get_string('noappointments', 'local_msteams'), 'info');
         }
+
+        $actioncontext = $showactions ? self::build_action_context($baseurl) : null;
 
         $months = [];
         foreach ($slots as $slot) {
@@ -89,8 +108,8 @@ final class view {
                         $meetinglink,
                     ];
 
-                    if ($showactions) {
-                        $row[] = self::render_actions($slot, $baseurl);
+                    if ($showactions && $actioncontext) {
+                        $row[] = self::render_actions($slot, $actioncontext);
                     }
 
                     $table->data[] = $row;
@@ -118,6 +137,8 @@ final class view {
         if (!preg_match('/^\d{4}-\d{2}$/', $month)) {
             $month = gmdate('Y-m');
         }
+
+        $canmanage = has_capability('local/msteams:manageslots', \context_system::instance());
 
         $slotsbyday = [];
         foreach ($slots as $slot) {
@@ -201,7 +222,7 @@ final class view {
                                 'onclick' => $entrypopup ? self::popup_onclick_js('msteamsjoin') : null,
                             ]
                         );
-                    } else if (empty($slot->ispreview) && !empty($slot->id) && has_capability('local/msteams:manageslots', \context_system::instance())) {
+                    } else if (empty($slot->ispreview) && !empty($slot->id) && $canmanage) {
                         $content[] = \html_writer::link(
                             new \moodle_url('/local/msteams/edit.php', ['id' => $slot->id]),
                             $entrycontent,
@@ -258,7 +279,7 @@ final class view {
         }
 
         if ($baseurl) {
-            $items[] = \html_writer::tag('div', self::render_actions($slot, $baseurl));
+            $items[] = \html_writer::tag('div', self::render_actions($slot, self::build_action_context($baseurl)));
         }
 
         return \html_writer::div(
@@ -269,16 +290,13 @@ final class view {
 
     /**
      * @param \stdClass $slot
-     * @param moodle_url|null $baseurl
+     * @param array $actioncontext
      * @return string
      */
-    private static function render_actions(\stdClass $slot, ?\moodle_url $baseurl = null): string {
-        global $USER;
-
+    private static function render_actions(\stdClass $slot, array $actioncontext): string {
         $links = [];
-        $returnurl = $baseurl ? $baseurl->out(false) : (new \moodle_url('/local/msteams/index.php'))->out(false);
 
-        if (has_capability('local/msteams:manageslots', \context_system::instance())) {
+        if ($actioncontext['canmanage']) {
             $links[] = \html_writer::link(
                 new \moodle_url('/local/msteams/edit.php', ['id' => $slot->id]),
                 get_string('edit')
@@ -291,27 +309,27 @@ final class view {
             }
         }
 
-        if ($slot->status !== 'cancelled' && has_capability('local/msteams:claimslot', \context_system::instance())) {
+        if ($slot->status !== 'cancelled' && $actioncontext['canclaim']) {
             if (empty($slot->hostid)) {
                 $links[] = \html_writer::link(
-                    new \moodle_url('/local/msteams/claim.php', ['id' => $slot->id, 'returnurl' => $returnurl]),
+                    new \moodle_url('/local/msteams/claim.php', ['id' => $slot->id, 'returnurl' => $actioncontext['returnurl']]),
                     get_string('claimslot', 'local_msteams')
                 );
-            } else if ((int)$slot->hostid === (int)$USER->id || has_capability('local/msteams:manageslots', \context_system::instance())) {
+            } else if ((int)$slot->hostid === $actioncontext['userid'] || $actioncontext['canmanage']) {
                 $links[] = \html_writer::link(
-                    new \moodle_url('/local/msteams/release.php', ['id' => $slot->id, 'returnurl' => $returnurl]),
+                    new \moodle_url('/local/msteams/release.php', ['id' => $slot->id, 'returnurl' => $actioncontext['returnurl']]),
                     get_string('releaseslot', 'local_msteams')
                 );
             }
         }
 
-        if (has_capability('local/msteams:manageslots', \context_system::instance())) {
+        if ($actioncontext['canmanage']) {
             $links[] = self::render_post_action(
                 new \moodle_url('/local/msteams/toggle.php'),
                 [
                     'id' => $slot->id,
                     'sesskey' => sesskey(),
-                    'returnurl' => $returnurl,
+                    'returnurl' => $actioncontext['returnurl'],
                 ],
                 $slot->status === 'cancelled' ? get_string('reopenslot', 'local_msteams') : get_string('cancelslot', 'local_msteams')
             );
@@ -320,7 +338,7 @@ final class view {
                 [
                     'id' => $slot->id,
                     'sesskey' => sesskey(),
-                    'returnurl' => $returnurl,
+                    'returnurl' => $actioncontext['returnurl'],
                 ],
                 get_string('deleteslot', 'local_msteams'),
                 'color:#b42318;font-weight:600;'
