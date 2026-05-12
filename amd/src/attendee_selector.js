@@ -93,6 +93,29 @@ define([], function() {
             var ids = currentSelectedIds();
             var i;
 
+            var buildRemoveHandler = function(id) {
+                return function(e) {
+                    var current = currentSelectedIds();
+                    var next = [];
+                    var k;
+
+                    if (e && e.preventDefault) {
+                        e.preventDefault();
+                    }
+
+                    for (k = 0; k < current.length; k++) {
+                        if (parseInt(current[k], 10) !== id) {
+                            next.push(parseInt(current[k], 10));
+                        }
+                    }
+
+                    saveSelected(next);
+                    renderSelected();
+                    renderResults();
+                    return false;
+                };
+            };
+
             selected.innerHTML = '';
             if (!ids.length) {
                 selected.appendChild(document.createTextNode(cfg.nonechosen));
@@ -110,26 +133,7 @@ define([], function() {
                         remove.href = '#';
                         remove.className = 'btn btn-sm btn-outline-danger';
                         remove.appendChild(document.createTextNode(cfg.removelabel));
-                        remove.onclick = function(e) {
-                            var current = currentSelectedIds();
-                            var next = [];
-                            var k;
-
-                            if (e && e.preventDefault) {
-                                e.preventDefault();
-                            }
-
-                            for (k = 0; k < current.length; k++) {
-                                if (parseInt(current[k], 10) !== id) {
-                                    next.push(parseInt(current[k], 10));
-                                }
-                            }
-
-                            saveSelected(next);
-                            renderSelected();
-                            renderResults();
-                            return false;
-                        };
+                        remove.onclick = buildRemoveHandler(id);
                         row.appendChild(remove);
                     } else {
                         var removelink = document.createElement('a');
@@ -150,58 +154,61 @@ define([], function() {
             var matches = 0;
             var i;
 
+            var buildAddHandler = function(user) {
+                return function(e) {
+                    var current;
+
+                    if (e && e.preventDefault) {
+                        e.preventDefault();
+                    }
+
+                    current = currentSelectedIds();
+                    current.push(parseInt(user.id, 10));
+                    saveSelected(current);
+                    renderSelected();
+                    renderResults();
+                    return false;
+                };
+            };
+
             results.innerHTML = '';
             if (!term) {
                 return;
             }
 
             for (i = 0; i < cfg.users.length && matches < 20; i++) {
-                (function(user) {
-                    if (user.label.toLowerCase().indexOf(term) === -1) {
-                        return;
-                    }
+                var user = cfg.users[i];
+                if (user.label.toLowerCase().indexOf(term) === -1) {
+                    continue;
+                }
 
-                    matches++;
+                matches++;
 
-                    var row = document.createElement('div');
-                    row.className = 'border rounded p-2 mb-2';
-                    row.appendChild(document.createTextNode(user.label + ' '));
+                var row = document.createElement('div');
+                row.className = 'border rounded p-2 mb-2';
+                row.appendChild(document.createTextNode(user.label + ' '));
 
-                    if (contains(ids, parseInt(user.id, 10))) {
-                        var badge = document.createElement('span');
-                        badge.className = 'badge badge-secondary';
-                        badge.appendChild(document.createTextNode(cfg.selectedlabel));
-                        row.appendChild(badge);
-                    } else if (cfg.mode === 'form') {
-                        var add = document.createElement('a');
-                        add.href = '#';
-                        add.className = 'btn btn-sm btn-primary';
-                        add.appendChild(document.createTextNode(cfg.addlabel));
-                        add.onclick = function(e) {
-                            var current;
+                if (contains(ids, parseInt(user.id, 10))) {
+                    var badge = document.createElement('span');
+                    badge.className = 'badge badge-secondary';
+                    badge.appendChild(document.createTextNode(cfg.selectedlabel));
+                    row.appendChild(badge);
+                } else if (cfg.mode === 'form') {
+                    var add = document.createElement('a');
+                    add.href = '#';
+                    add.className = 'btn btn-sm btn-primary';
+                    add.appendChild(document.createTextNode(cfg.addlabel));
+                    add.onclick = buildAddHandler(user);
+                    row.appendChild(add);
+                } else {
+                    var addlink = document.createElement('a');
+                    addlink.href = cfg.addbase + String(user.id);
+                    addlink.className = 'btn btn-sm btn-primary';
+                    addlink.appendChild(document.createTextNode(cfg.addlabel));
+                    row.appendChild(addlink);
+                }
 
-                            if (e && e.preventDefault) {
-                                e.preventDefault();
-                            }
-
-                            current = currentSelectedIds();
-                            current.push(parseInt(user.id, 10));
-                            saveSelected(current);
-                            renderSelected();
-                            renderResults();
-                            return false;
-                        };
-                        row.appendChild(add);
-                    } else {
-                        var addlink = document.createElement('a');
-                        addlink.href = cfg.addbase + String(user.id);
-                        addlink.className = 'btn btn-sm btn-primary';
-                        addlink.appendChild(document.createTextNode(cfg.addlabel));
-                        row.appendChild(addlink);
-                    }
-
-                    results.appendChild(row);
-                })(cfg.users[i]);
+                results.appendChild(row);
             }
 
             if (!matches) {
